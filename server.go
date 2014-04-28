@@ -3,7 +3,6 @@ package redis
 import (
     "bufio"
     "encoding/json"
-    "github.com/golang/glog"
     "os"
     "sync"
 )
@@ -28,8 +27,6 @@ func BgSave(complete chan bool) string {
         go func() {
             fileWriteMu.Lock()
             defer fileWriteMu.Unlock()
-
-            glog.Infoln("Saving...", publishCount, DumpFileName)
 
             fo, _ := os.Create(DumpFileName)
             defer fo.Close()
@@ -60,7 +57,6 @@ func BgSave(complete chan bool) string {
             if complete != nil {
                 complete <- true
             }
-            glog.Infoln("Saved")
         }()
     }
 
