@@ -1,4 +1,4 @@
-package redisServer
+package redis
 
 import (
     "fmt"
@@ -21,14 +21,13 @@ var (
     publishCount = 0
 )
 
+// Subscribes the client to the given patterns.
+// Supported glob-style patterns:
+// h?llo subscribes to hello, hallo and hxllo
+// h*llo subscribes to hllo and heeeello
+// h[ae]llo subscribes to hello and hallo, but not hillo
+// Use \ to escape special characters if you want to match them verbatim.
 func Psubscribe(pattern ...string) (c consumer) {
-    // Subscribes the client to the given patterns.
-    // Supported glob-style patterns:
-    // h?llo subscribes to hello, hallo and hxllo
-    // h*llo subscribes to hllo and heeeello
-    // h[ae]llo subscribes to hello and hallo, but not hillo
-    // Use \ to escape special characters if you want to match them verbatim.
-
     exps := []*regexp.Regexp{}
 
     for _, p := range pattern {

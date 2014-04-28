@@ -1,14 +1,14 @@
-package redisServer
+package redis
 
 import (
     "regexp"
 )
 
+// Removes the specified keys. A key is ignored if it does not exist.
+//
+// Return value
+// Integer reply: The number of keys that were removed.
 func Del(key ...string) (deletedCount int) {
-    // Removes the specified keys. A key is ignored if it does not exist.
-    //
-    // Return value
-    // Integer reply: The number of keys that were removed.
 
     hashesMu.Lock()
     defer hashesMu.Unlock()
@@ -54,13 +54,13 @@ func Del(key ...string) (deletedCount int) {
     return
 }
 
+// Returns if key exists.
+//
+// Return value
+// Integer reply, specifically:
+// 1 if the key exists.
+// 0 if the key does not exist.
 func Exists(key string) int {
-    // Returns if key exists.
-    //
-    // Return value
-    // Integer reply, specifically:
-    // 1 if the key exists.
-    // 0 if the key does not exist.
 
     hashesMu.Lock()
     defer hashesMu.Unlock()
@@ -90,12 +90,12 @@ func Exists(key string) int {
     return 0
 }
 
+// Returns the string representation of the type of the value stored at key. The different
+// types that can be returned are: string, list, set, zset and hash.
+//
+// Return value
+// Simple string reply: type of key, or none when key does not exist.
 func Type(key string) string {
-    // Returns the string representation of the type of the value stored at key. The different
-    // types that can be returned are: string, list, set, zset and hash.
-    //
-    // Return value
-    // Simple string reply: type of key, or none when key does not exist.
 
     hashesMu.Lock()
     defer hashesMu.Unlock()
@@ -125,26 +125,26 @@ func Type(key string) string {
     return ""
 }
 
+// Returns all keys matching pattern.
+//
+// While the time complexity for this operation is O(N), the constant times are fairly
+// low. For example, Redis running on an entry level laptop can scan a 1 million key
+// database in 40 milliseconds.
+// Warning: consider KEYS as a command that should only be used in production
+// environments with extreme care. It may ruin performance when it is executed against
+// large databases. This command is intended for debugging and special operations, such
+// as changing your keyspace layout. Don't use KEYS in your regular application code.
+// If you're looking for a way to find keys in a subset of your keyspace, consider using
+// sets.
+// Supported glob-style patterns:
+// h?llo matches hello, hallo and hxllo
+// h*llo matches hllo and heeeello
+// h[ae]llo matches hello and hallo, but not hillo
+// Use \ to escape special characters if you want to match them verbatim.
+//
+// Return value
+// Array reply: list of keys matching pattern.
 func Keys(pattern string) (out []string) {
-    // Returns all keys matching pattern.
-    //
-    // While the time complexity for this operation is O(N), the constant times are fairly
-    // low. For example, Redis running on an entry level laptop can scan a 1 million key
-    // database in 40 milliseconds.
-    // Warning: consider KEYS as a command that should only be used in production
-    // environments with extreme care. It may ruin performance when it is executed against
-    // large databases. This command is intended for debugging and special operations, such
-    // as changing your keyspace layout. Don't use KEYS in your regular application code.
-    // If you're looking for a way to find keys in a subset of your keyspace, consider using
-    // sets.
-    // Supported glob-style patterns:
-    // h?llo matches hello, hallo and hxllo
-    // h*llo matches hllo and heeeello
-    // h[ae]llo matches hello and hallo, but not hillo
-    // Use \ to escape special characters if you want to match them verbatim.
-    //
-    // Return value
-    // Array reply: list of keys matching pattern.
 
     hashesMu.Lock()
     defer hashesMu.Unlock()

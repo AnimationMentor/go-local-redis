@@ -1,4 +1,4 @@
-package redisServer
+package redis
 
 import (
     "bufio"
@@ -14,15 +14,14 @@ var (
     fileWriteMu      sync.Mutex
 )
 
+// Save the DB in background. The OK code is immediately returned. Redis forks, the parent
+// continues to serve the clients, the child saves the DB on disk then exits. A client my
+// be able to check if the operation succeeded using the LASTSAVE command.
+// Please refer to the persistence documentation for detailed information.
+//
+// Return value
+// Simple string reply
 func BgSave(complete chan bool) string {
-    // Save the DB in background. The OK code is immediately returned. Redis forks, the parent
-    // continues to serve the clients, the child saves the DB on disk then exits. A client my
-    // be able to check if the operation succeeded using the LASTSAVE command.
-    // Please refer to the persistence documentation for detailed information.
-    //
-    // Return value
-    // Simple string reply
-
     if publishCount > lastPublishCount {
         lastPublishCount = publishCount
 

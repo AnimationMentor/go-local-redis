@@ -1,4 +1,4 @@
-package redisServer
+package redis
 
 import "sync"
 
@@ -10,13 +10,12 @@ var (
     setsMu    sync.RWMutex
 )
 
+// Add the specified members to the set stored at key. Specified members that are already a member of this set are ignored. If key does not exist, a new set is created before adding the specified members.
+// An error is returned when the value stored at key is not a set.
+//
+// Return value
+// Integer reply: the number of elements that were added to the set, not including all the elements already present into the set.
 func Sadd(key string, member ...string) (additions int) {
-    // Add the specified members to the set stored at key. Specified members that are already a member of this set are ignored. If key does not exist, a new set is created before adding the specified members.
-    // An error is returned when the value stored at key is not a set.
-    //
-    // Return value
-    // Integer reply: the number of elements that were added to the set, not including all the elements already present into the set.
-
     setsMu.Lock()
     defer setsMu.Unlock()
 
@@ -41,13 +40,12 @@ func Sadd(key string, member ...string) (additions int) {
     return
 }
 
+// Returns all the members of the set value stored at key.
+// This has the same effect as running SINTER with one argument key.
+//
+// Return value
+// Array reply: all elements of the set.
 func Smembers(key string) (out []string) {
-    // Returns all the members of the set value stored at key.
-    // This has the same effect as running SINTER with one argument key.
-
-    // Return value
-    // Array reply: all elements of the set.
-
     setsMu.RLock()
     defer setsMu.RUnlock()
 
@@ -58,13 +56,12 @@ func Smembers(key string) (out []string) {
     return
 }
 
+// Returns all the members of the set value stored at key.
+// This has the same effect as running SINTER with one argument key.
+//
+// Return value
+// Array reply: all elements of the set.
 func Scard(key string) (count int) {
-    // Returns all the members of the set value stored at key.
-    // This has the same effect as running SINTER with one argument key.
-
-    // Return value
-    // Array reply: all elements of the set.
-
     setsMu.RLock()
     defer setsMu.RUnlock()
 
