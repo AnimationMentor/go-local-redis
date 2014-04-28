@@ -1,9 +1,8 @@
 package redis
 
-import "sync"
-
 import (
     "strconv"
+    "sync"
 )
 
 var (

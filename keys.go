@@ -1,8 +1,6 @@
 package redis
 
-import (
-    "regexp"
-)
+import "regexp"
 
 // Removes the specified keys. A key is ignored if it does not exist.
 //
