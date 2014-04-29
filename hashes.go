@@ -48,6 +48,32 @@ func HGet(key, field string) string {
     return h[field]
 }
 
+// Removes the specified fields from the hash stored at key. Specified fields that do not
+// exist within this hash are ignored. If key does not exist, it is treated as an empty
+// hash and this command returns 0.
+//
+// Return value
+// Integer reply: the number of fields that were removed from the hash, not including
+// specified but non existing fields.
+func HDel(key, field string) (existed int) {
+    hashesMu.Lock()
+    defer hashesMu.Unlock()
+
+    existed = 0
+    h, exists := allHashes[key]
+    if exists {
+        _, exists := h[field]
+        if exists {
+            delete(h, field)
+            existed++
+        }
+    }
+
+    publish <- notice{"hash", key, allHashes[key]}
+
+    return
+}
+
 // Returns if field is an existing field in the hash stored at key.
 //
 // Return value
