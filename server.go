@@ -9,7 +9,7 @@ import (
 
 var (
     lastPublishCount = 0
-    DumpFileName     = "redisServer.dump.json"
+    DumpFileName     = "../redisServer.dump.json"
     fileWriteMu      sync.Mutex
 )
 
