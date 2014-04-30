@@ -1,9 +1,6 @@
 package redis
 
-import (
-    "fmt"
-    "regexp"
-)
+import "regexp"
 
 type notice struct {
     TypeName, KeyName string
@@ -42,7 +39,6 @@ func Psubscribe(pattern ...string) (c consumer) {
 
 func init() {
     go func() {
-        fmt.Println("Listening for pubs/subs")
         for v := range publish {
             for _, c := range consumers {
                 for _, r := range c.exps {
