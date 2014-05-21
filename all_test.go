@@ -117,8 +117,8 @@ func TestPubSubSimple(t *testing.T) {
 
     go func() {
         consumer := Psubscribe(".*first.*")
-        match := <-consumer.channel
-        println("Match on second consumer:", match.typeName, match.keyName, match.data.(hash)["my key"])
+        match := <-consumer.Channel
+        println("Match on second consumer:", match.TypeName, match.KeyName, match.Data.(Hash)["my key"])
         w.Done()
     }()
 
@@ -139,14 +139,14 @@ func TestPubSubMultiple(t *testing.T) {
     go func() {
         consumer := Psubscribe("my first hash", ".*list.*")
 
-        for notice := range consumer.channel {
+        for notice := range consumer.Channel {
 
-            switch data := notice.data.(type) {
-            case list:
-                println("Match on consumer:", notice.typeName, notice.keyName, data[1])
+            switch data := notice.Data.(type) {
+            case List:
+                println("Match on consumer:", notice.TypeName, notice.KeyName, data[1])
                 w.Done()
-            case hash:
-                println("Match on consumer:", notice.typeName, notice.keyName, data["my key"])
+            case Hash:
+                println("Match on consumer:", notice.TypeName, notice.KeyName, data["my key"])
                 w.Done()
             }
 
