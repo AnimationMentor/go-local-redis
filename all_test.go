@@ -1,5 +1,7 @@
 package redis
 
+//// TODO: Document!
+
 import (
     "sync"
     "testing"
