@@ -35,7 +35,14 @@ func Sadd(key string, member ...string) (additions int) {
         s[m] = true
     }
 
-    publish <- notice{"set", key, allSets[key]}
+    // Publish as an array (not the internal storage hash representation)
+    //
+    var out []string
+    for k, _ := range allSets[key] {
+        out = append(out, k)
+    }
+
+    publish <- notice{"set", key, out}
 
     return
 }
