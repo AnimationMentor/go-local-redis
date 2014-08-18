@@ -82,31 +82,31 @@ func BgSave(complete chan bool) string {
     return "OK"
 }
 
+//// Load any backup before doing anything else.
+//
 func init() {
-    func() {
-        fileWriteMu.Lock()
-        defer fileWriteMu.Unlock()
+    fileWriteMu.Lock()
+    defer fileWriteMu.Unlock()
 
-        fo, _ := os.Open(DumpFileName)
-        defer fo.Close()
+    fo, _ := os.Open(DumpFileName)
+    defer fo.Close()
 
-        r := bufio.NewReader(fo)
-        dec := json.NewDecoder(r)
+    r := bufio.NewReader(fo)
+    dec := json.NewDecoder(r)
 
-        hashesMu.Lock()
-        dec.Decode(&allHashes)
-        hashesMu.Unlock()
+    hashesMu.Lock()
+    dec.Decode(&allHashes)
+    hashesMu.Unlock()
 
-        listsMu.Lock()
-        dec.Decode(&allLists)
-        listsMu.Unlock()
+    listsMu.Lock()
+    dec.Decode(&allLists)
+    listsMu.Unlock()
 
-        setsMu.Lock()
-        dec.Decode(&allSets)
-        setsMu.Unlock()
+    setsMu.Lock()
+    dec.Decode(&allSets)
+    setsMu.Unlock()
 
-        stringsMu.Lock()
-        dec.Decode(&allStrings)
-        stringsMu.Unlock()
-    }()
+    stringsMu.Lock()
+    dec.Decode(&allStrings)
+    stringsMu.Unlock()
 }

@@ -141,6 +141,12 @@ func TestPubSubMultiple(t *testing.T) {
     go func() {
         consumer := Psubscribe("my first hash", ".*list.*")
 
+        go func() {
+            println(Rpush("a list", "item 1", "item 2"))
+            println(HSet("my first hash", "my key", "yo yo yo"))
+            w.Done()
+        }()
+
         for notice := range consumer.Channel {
 
             switch data := notice.Data.(type) {
@@ -155,11 +161,24 @@ func TestPubSubMultiple(t *testing.T) {
         }
     }()
 
+    w.Wait()
+}
+
+func TestPubSubRedisSetUpdates(t *testing.T) {
+    var w sync.WaitGroup
+    w.Add(1)
+
+    consumer := Psubscribe("publish set")
+
     go func() {
-        println(Rpush("a list", "item 1", "item 2"))
-        println(HSet("my first hash", "my key", "yo yo yo"))
+        println("Setting set vals")
+        println(Sadd("publish set", "hot", "doggie"))
+        println("Set set vals")
         w.Done()
     }()
+
+    match := <-consumer.Channel
+    println("Match on second consumer:", match.TypeName, match.KeyName, match.Data.([]string)[0], match.Data.([]string)[1])
 
     w.Wait()
 }
