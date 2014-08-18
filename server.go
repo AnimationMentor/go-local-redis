@@ -31,25 +31,44 @@ func BgSave(complete chan bool) string {
             fo, _ := os.Create(DumpFileName)
             defer fo.Close()
             w := bufio.NewWriter(fo)
-            enc := json.NewEncoder(w)
 
             // TODO: Lock around each key (checking existence) instead of around the whole
             // hash so that other operations may sneak in.
 
             hashesMu.Lock()
-            enc.Encode(&allHashes)
+            b1, err := json.MarshalIndent(&allHashes, "", "    ")
+            if err != nil {
+                println(err.Error())
+                return
+            }
+            w.Write(b1)
             hashesMu.Unlock()
 
             listsMu.Lock()
-            enc.Encode(&allLists)
+            b2, err := json.MarshalIndent(&allLists, "", "    ")
+            if err != nil {
+                println(err.Error())
+                return
+            }
+            w.Write(b2)
             listsMu.Unlock()
 
             setsMu.Lock()
-            enc.Encode(&allSets)
+            b3, err := json.MarshalIndent(&allSets, "", "    ")
+            if err != nil {
+                println(err.Error())
+                return
+            }
+            w.Write(b3)
             setsMu.Unlock()
 
             stringsMu.Lock()
-            enc.Encode(&allStrings)
+            b4, err := json.MarshalIndent(&allStrings, "", "    ")
+            if err != nil {
+                println(err.Error())
+                return
+            }
+            w.Write(b4)
             stringsMu.Unlock()
 
             w.Flush()
@@ -64,7 +83,7 @@ func BgSave(complete chan bool) string {
 }
 
 func init() {
-    go func() {
+    func() {
         fileWriteMu.Lock()
         defer fileWriteMu.Unlock()
 
