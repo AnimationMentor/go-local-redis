@@ -9,7 +9,7 @@ import (
 
 var (
     lastPublishCount = 0
-    DumpFileName     = "../redisServer.dump.json"
+    DefaultDumpFileName     = "../redisServer.dump.json"
     fileWriteMu      sync.Mutex
 )
 
@@ -20,7 +20,7 @@ var (
 //
 // Return value
 // Simple string reply
-func BgSave(complete chan bool) string {
+func BgSave(fileName string, complete chan bool) string {
     if publishCount > lastPublishCount {
         lastPublishCount = publishCount
 
@@ -28,7 +28,7 @@ func BgSave(complete chan bool) string {
             fileWriteMu.Lock()
             defer fileWriteMu.Unlock()
 
-            fo, _ := os.Create(DumpFileName)
+            fo, _ := os.Create(fileName)
             defer fo.Close()
             w := bufio.NewWriter(fo)
 
@@ -84,29 +84,31 @@ func BgSave(complete chan bool) string {
 
 //// Load any backup before doing anything else.
 //
-func init() {
-    fileWriteMu.Lock()
-    defer fileWriteMu.Unlock()
+func InitDB(fileName string) {
+    if fileName != "" {
+        fileWriteMu.Lock()
+        defer fileWriteMu.Unlock()
 
-    fo, _ := os.Open(DumpFileName)
-    defer fo.Close()
+        fo, _ := os.Open(fileName)
+        defer fo.Close()
 
-    r := bufio.NewReader(fo)
-    dec := json.NewDecoder(r)
+        r := bufio.NewReader(fo)
+        dec := json.NewDecoder(r)
 
-    hashesMu.Lock()
-    dec.Decode(&allHashes)
-    hashesMu.Unlock()
+        hashesMu.Lock()
+        dec.Decode(&allHashes)
+        hashesMu.Unlock()
 
-    listsMu.Lock()
-    dec.Decode(&allLists)
-    listsMu.Unlock()
+        listsMu.Lock()
+        dec.Decode(&allLists)
+        listsMu.Unlock()
 
-    setsMu.Lock()
-    dec.Decode(&allSets)
-    setsMu.Unlock()
+        setsMu.Lock()
+        dec.Decode(&allSets)
+        setsMu.Unlock()
 
-    stringsMu.Lock()
-    dec.Decode(&allStrings)
-    stringsMu.Unlock()
+        stringsMu.Lock()
+        dec.Decode(&allStrings)
+        stringsMu.Unlock()
+    }
 }

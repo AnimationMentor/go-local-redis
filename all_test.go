@@ -3,6 +3,9 @@ package redis
 //// TODO: Document!
 
 import (
+    "fmt"
+    "os"
+    "path/filepath"
     "sync"
     "testing"
 )
@@ -109,7 +112,10 @@ func TestServer(t *testing.T) {
     println(Sadd("a set", "X", "Y", "X"))
 
     complete := make(chan bool)
-    println(BgSave(complete))
+    tmpDir := os.TempDir()
+    baseFileName := fmt.Sprintf("localRedisTest.%d.json", os.Getpid())
+    fileName := filepath.Join(tmpDir, baseFileName)
+    println(BgSave(fileName, complete))
     <-complete
 }
 
