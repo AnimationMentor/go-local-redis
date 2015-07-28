@@ -122,9 +122,9 @@ func TestServer(t *testing.T) {
 func TestPubSubSimple(t *testing.T) {
     var w sync.WaitGroup
     w.Add(2)
+    consumer := Psubscribe(".*first.*")
 
     go func() {
-        consumer := Psubscribe(".*first.*")
         match := <-consumer.Channel
         println("Match on second consumer:", match.TypeName, match.KeyName, match.Data.(Hash)["my key"])
         w.Done()
