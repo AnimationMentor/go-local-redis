@@ -26,25 +26,25 @@ func Del(key ...string) (deletedCount int) {
         if _, exists := allHashes[k]; exists {
             delete(allHashes, k)
             deletedCount++
-            publish <- notice{"hash", k, nil}
+            publish <- notice{"hash", k, "", nil}
             continue
         }
         if _, exists := allLists[k]; exists {
             delete(allLists, k)
             deletedCount++
-            publish <- notice{"list", k, nil}
+            publish <- notice{"list", k, "", nil}
             continue
         }
         if _, exists := allSets[k]; exists {
             delete(allSets, k)
             deletedCount++
-            publish <- notice{"set", k, nil}
+            publish <- notice{"set", k, "", nil}
             continue
         }
         if _, exists := allStrings[k]; exists {
             delete(allStrings, k)
             deletedCount++
-            publish <- notice{"string", k, nil}
+            publish <- notice{"string", k, "", nil}
             continue
         }
     }

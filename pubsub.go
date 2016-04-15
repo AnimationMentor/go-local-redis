@@ -3,7 +3,7 @@ package redis
 import "regexp"
 
 type notice struct {
-    TypeName, KeyName string
+    TypeName, KeyName, FieldName string
     Data              interface{}
 }
 

@@ -36,7 +36,7 @@ func Rpush(key string, value ...string) int {
         allLists[key] = append(allLists[key], v)
     }
 
-    publish <- notice{"list", key, allLists[key]}
+    publish <- notice{"list", key, "", allLists[key]}
 
     return len(allLists[key])
 }

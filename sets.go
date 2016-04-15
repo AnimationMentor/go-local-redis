@@ -42,7 +42,7 @@ func Sadd(key string, member ...string) (additions int) {
         out = append(out, k)
     }
 
-    publish <- notice{"set", key, out}
+    publish <- notice{"set", key, "", out}
 
     return
 }

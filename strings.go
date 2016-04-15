@@ -19,7 +19,7 @@ func Set(key, value string) string {
 
     allStrings[key] = value
 
-    publish <- notice{"string", key, allStrings[key]}
+    publish <- notice{"string", key, "", allStrings[key]}
 
     return "OK"
 }
@@ -55,7 +55,7 @@ func Setnx(key, value string) int {
     }
     allStrings[key] = value
 
-    publish <- notice{"string", key, allStrings[key]}
+    publish <- notice{"string", key, "", allStrings[key]}
 
     return 1
 }
@@ -78,7 +78,7 @@ func Incr(key string) string {
     i, _ := strconv.Atoi(val)
     allStrings[key] = strconv.Itoa(i + 1)
 
-    publish <- notice{"string", key, allStrings[key]}
+    publish <- notice{"string", key, "", allStrings[key]}
 
     return allStrings[key]
 }
@@ -99,7 +99,7 @@ func Decr(key string) string {
     i, _ := strconv.Atoi(val)
     allStrings[key] = strconv.Itoa(i - 1)
 
-    publish <- notice{"string", key, allStrings[key]}
+    publish <- notice{"string", key, "", allStrings[key]}
 
     return allStrings[key]
 }

@@ -30,7 +30,7 @@ func HSet(key, field, value string) (existed int) {
     }
     h[field] = value
 
-    publish <- notice{"hash", key, allHashes[key]}
+    publish <- notice{"hash", key, field, allHashes[key]}
 
     return
 }
@@ -69,7 +69,7 @@ func HDel(key, field string) (existed int) {
         }
     }
 
-    publish <- notice{"hash", key, allHashes[key]}
+    publish <- notice{"hash", key, field, allHashes[key]}
 
     return
 }
