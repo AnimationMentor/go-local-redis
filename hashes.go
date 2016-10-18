@@ -1,5 +1,6 @@
 package redis
 
+import "encoding/json"
 import "sync"
 
 type Hash map[string]string
@@ -115,6 +116,13 @@ func Hgetall(key string) (out Hash) {
     }
 
     return
+}
+
+func HToJSON(data interface{}) ([]byte, error) {
+    hashesMu.RLock()
+    defer hashesMu.RUnlock()
+	b, err := json.Marshal(data)
+    return b, err
 }
 
 // Returns all values in the hash stored at key.
