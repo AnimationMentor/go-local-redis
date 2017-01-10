@@ -1,6 +1,10 @@
 package redis
 
-import "regexp"
+import (
+	"regexp"
+	"sync"
+	"sync/atomic"
+)
 
 type notice struct {
 	TypeName, KeyName, FieldName string
@@ -15,7 +19,8 @@ type consumer struct {
 var (
 	publish      = make(chan notice, 1000)
 	consumers    []consumer
-	publishCount = 0
+	consumerMu   sync.RWMutex
+	publishCount uint64 = 0
 )
 
 // Subscribes the client to the given patterns.
@@ -31,16 +36,23 @@ func Psubscribe(pattern ...string) consumer {
 		r, _ := regexp.Compile(p)
 		exps = append(exps, r)
 	}
-	c = consumer{exps: exps, Channel: make(chan notice, 1000)}
-	consumers = append(consumers, c)
+	c := consumer{exps: exps, Channel: make(chan notice, 1000)}
 
-	return
+	consumerMu.Lock()
+	consumers = append(consumers, c)
+	consumerMu.Unlock()
+
+	return c
 }
 
 func init() {
 	go func() {
 		for v := range publish {
-			for _, c := range consumers {
+			consumerMu.RLock()
+			local_consumers := consumers[:]
+			consumerMu.RUnlock()
+
+			for _, c := range local_consumers {
 				for _, r := range c.exps {
 					if r.MatchString(v.KeyName) == true {
 						// fmt.Println("Publishing:", v.KeyName)
@@ -48,7 +60,7 @@ func init() {
 					}
 				}
 			}
-			publishCount++
+			atomic.AddUint64(&publishCount, 1)
 		}
 	}()
 }

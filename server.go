@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"os"
 	"sync"
+	"sync/atomic"
 )
 
 var (
-	lastPublishCount = 0
-	DefaultDumpFileName       = "../redisServer.dump.json"
-	fileWriteMu        sync.Mutex
+	lastPublishCount    uint64 = 0
+	DefaultDumpFileName        = "../redisServer.dump.json"
+	fileWriteMu         sync.Mutex
 )
 
 // Save the DB in background. The OK code is immediately returned. Redis forks, the parent
@@ -21,8 +22,9 @@ var (
 // Return value
 // Simple string reply
 func BgSave(fileName string, complete chan bool) string {
-	if publishCount > lastPublishCount
-	if pubCount > lastPublishCount {
+	pubCount := atomic.LoadUint64(&publishCount)
+	if pubCount > atomic.LoadUint64(&lastPublishCount) {
+		atomic.StoreUint64(&lastPublishCount, pubCount)
 
 		go func() {
 			fileWriteMu.Lock()
@@ -37,39 +39,39 @@ func BgSave(fileName string, complete chan bool) string {
 
 			hashesMu.Lock()
 			b1, err := json.MarshalIndent(&allHashes, "", "    ")
+			hashesMu.Unlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b1)
-			hashesMu.Unlock()
 
 			listsMu.Lock()
 			b2, err := json.MarshalIndent(&allLists, "", "    ")
+			listsMu.Unlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b2)
-			listsMu.Unlock()
 
 			setsMu.Lock()
 			b3, err := json.MarshalIndent(&allSets, "", "    ")
+			setsMu.Unlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b3)
-			setsMu.Unlock()
 
 			stringsMu.Lock()
 			b4, err := json.MarshalIndent(&allStrings, "", "    ")
+			stringsMu.Unlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b4)
-			stringsMu.Unlock()
 
 			w.Flush()
 
