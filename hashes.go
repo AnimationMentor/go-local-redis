@@ -119,8 +119,6 @@ func Hgetall(key string) (out Hash) {
 }
 
 func HToJSON(data interface{}) ([]byte, error) {
-    hashesMu.RLock()
-    defer hashesMu.RUnlock()
 	b, err := json.Marshal(data)
 	return b, err
 }
