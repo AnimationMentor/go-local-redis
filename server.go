@@ -37,9 +37,14 @@ func BgSave(fileName string, complete chan bool) string {
 			// TODO: Lock around each key (checking existence) instead of around the whole
 			// hash so that other operations may sneak in.
 
-			hashesMu.Lock()
-			b1, err := json.MarshalIndent(&allHashes, "", "    ")
-			hashesMu.Unlock()
+			allMaps := make(map[string]map[string]string)
+
+			hashesMu.RLock()
+			for key, hash := range allHashes {
+				allMaps[key] = hash.ToMap()
+			}
+			hashesMu.RUnlock()
+			b1, err := json.MarshalIndent(&allMaps, "", "    ")
 			if err != nil {
 				println(err.Error())
 				return
@@ -97,8 +102,14 @@ func InitDB(fileName string) {
 		r := bufio.NewReader(fo)
 		dec := json.NewDecoder(r)
 
+		allMaps := make(map[string]map[string]string)
+		dec.Decode(&allMaps)
 		hashesMu.Lock()
-		dec.Decode(&allHashes)
+		for key, aMap := range allMaps {
+			hash := NewHash()
+			hash.m = aMap
+			allHashes[key] = hash
+		}
 		hashesMu.Unlock()
 
 		listsMu.Lock()

@@ -22,14 +22,14 @@ func TestHashes(t *testing.T) {
 
 	println(HSet("my first hash", "his key", "doi"))
 	h := Hgetall("my first hash")
-	for k, v := range h {
+	for k, v := range h.ToMap() {
 		println(k, ":", v)
 	}
 
 	//// Updating the returned hash's value shouldn't effect the source.
 	//
-	h["his key"] = "nuht uh"
-	for k, v := range Hgetall("my first hash") {
+	h.Set("his key", "nuht uh")
+	for k, v := range Hgetall("my first hash").ToMap() {
 		println(k, ":", v)
 	}
 
@@ -126,7 +126,8 @@ func TestPubSubSimple(t *testing.T) {
 
 	go func() {
 		match := <-consumer.Channel
-		println("Match on second consumer:", match.TypeName, match.KeyName, match.Data.(Hash)["my key"])
+		hash := match.Data.(Hash)
+		println("Match on second consumer:", match.TypeName, match.KeyName, hash.Get("my key"))
 		w.Done()
 	}()
 

@@ -1,14 +1,122 @@
 package redis
 
-import "encoding/json"
 import "sync"
 
-type Hash map[string]string
-
 var (
-	allHashes map[string]Hash = make(map[string]Hash)
+	allHashes = make(map[string]Hash)
 	hashesMu  sync.RWMutex
 )
+
+// Hash is a concurrent safe string map
+type Hash struct {
+	m  map[string]string
+	mu *sync.RWMutex
+}
+
+// NewHash creates a new Hash
+func NewHash() Hash {
+	return Hash{
+		m:  make(map[string]string),
+		mu: new(sync.RWMutex),
+	}
+}
+
+// Size returns the number of items in the hash
+func (h Hash) Size() int {
+	h.mu.RLock()
+	size := len(h.m)
+	h.mu.RUnlock()
+	return size
+}
+
+// Exists returns whether a key exists in the hash
+func (h Hash) Exists(key string) bool {
+	h.mu.RLock()
+	_, ok := h.m[key]
+	h.mu.RUnlock()
+	return ok
+}
+
+// Get returns the value of a key in the map,
+// or an empty string if it doesn't exist
+func (h Hash) Get(key string) string {
+	h.mu.RLock()
+	val := h.m[key]
+	h.mu.RUnlock()
+	return val
+}
+
+// GetExists returns the value of a key in the map,
+// and whether it existed.
+func (h Hash) GetExists(key string) (string, bool) {
+	h.mu.RLock()
+	val, exists := h.m[key]
+	h.mu.RUnlock()
+	return val, exists
+}
+
+// Set a key to a value
+func (h Hash) Set(key, value string) {
+	h.mu.Lock()
+	h.m[key] = value
+	h.mu.Unlock()
+}
+
+// Delete a key in the hash
+func (h Hash) Delete(key string) {
+	h.mu.Lock()
+	delete(h.m, key)
+	h.mu.Unlock()
+}
+
+// Keys returns all keys in the hash
+func (h Hash) Keys() []string {
+	h.mu.RLock()
+	keys := make([]string, 0, len(h.m))
+	for k := range h.m {
+		keys = append(keys, k)
+	}
+	h.mu.RUnlock()
+
+	return keys
+}
+
+// Values returns all values in the hash
+func (h Hash) Values() []string {
+	h.mu.RLock()
+	values := make([]string, 0, len(h.m))
+	for _, v := range h.m {
+		values = append(values, v)
+	}
+	h.mu.RUnlock()
+
+	return values
+}
+
+// Copy keys and values to a new Hash
+func (h Hash) Copy() Hash {
+	newHash := NewHash()
+
+	h.mu.RLock()
+	for k, v := range h.m {
+		newHash.m[k] = v
+	}
+	h.mu.RUnlock()
+
+	return newHash
+}
+
+// ToMap returns a copy of all data in the hash, as a map
+func (h Hash) ToMap() map[string]string {
+	h.mu.RLock()
+	retMap := make(map[string]string, len(h.m))
+	for k, v := range h.m {
+		retMap[k] = v
+	}
+	h.mu.RUnlock()
+
+	return retMap
+}
 
 // Sets field in the hash stored at key to value. If key does not exist, a
 // new key holding a hash is created. If field already exists in the hash,
@@ -20,18 +128,20 @@ var (
 // 0 if field already exists in the hash and the value was updated.
 func HSet(key, field, value string) (existed int) {
 	hashesMu.Lock()
-	defer hashesMu.Unlock()
 
 	existed = 0
 	h, exists := allHashes[key]
 	if !exists {
-		allHashes[key] = Hash{}
-		h = allHashes[key]
+		h = NewHash()
+		allHashes[key] = h
 		existed = 1
 	}
-	h[field] = value
 
-	publish <- notice{"hash", key, field, allHashes[key]}
+	hashesMu.Unlock()
+
+	h.Set(field, value)
+
+	publish <- notice{"hash", key, field, h}
 
 	return
 }
@@ -43,10 +153,14 @@ func HSet(key, field, value string) (existed int) {
 // present in the hash or key does not exist.
 func HGet(key, field string) string {
 	hashesMu.RLock()
-	defer hashesMu.RUnlock()
+	h, ok := allHashes[key]
+	hashesMu.RUnlock()
 
-	h := allHashes[key]
-	return h[field]
+	if !ok {
+		return ""
+	}
+
+	return h.Get(field)
 }
 
 // Removes the specified fields from the hash stored at key. Specified fields that do not
@@ -58,19 +172,20 @@ func HGet(key, field string) string {
 // specified but non existing fields.
 func HDel(key, field string) (existed int) {
 	hashesMu.Lock()
-	defer hashesMu.Unlock()
 
 	existed = 0
 	h, exists := allHashes[key]
+
 	if exists {
-		_, exists := h[field]
-		if exists {
-			delete(h, field)
+		if h.Exists(field) {
+			h.Delete(field)
 			existed++
 		}
 	}
 
-	publish <- notice{"hash", key, field, allHashes[key]}
+	hashesMu.Unlock()
+
+	publish <- notice{"hash", key, field, h}
 
 	return
 }
@@ -83,14 +198,13 @@ func HDel(key, field string) (existed int) {
 // 0 if the hash does not contain field, or key does not exist.
 func HExists(key, field string) (existed int) {
 	hashesMu.RLock()
-	defer hashesMu.RUnlock()
+	h, hashExists := allHashes[key]
+	hashesMu.RUnlock()
 
 	existed = 0
 
-	h, hash_exists := allHashes[key]
-	if hash_exists {
-		_, field_exists := h[field]
-		if field_exists {
+	if hashExists {
+		if h.Exists(field) {
 			existed = 1
 		}
 	}
@@ -104,53 +218,46 @@ func HExists(key, field string) (existed int) {
 //
 // Return value
 // map[string]string reply: list of fields and their values stored in the hash, or an empty list when key does not exist.
-func Hgetall(key string) (out Hash) {
+func Hgetall(key string) Hash {
 	hashesMu.RLock()
-	defer hashesMu.RUnlock()
+	h, ok := allHashes[key]
+	hashesMu.RUnlock()
 
-	out = Hash{}
-
-	h, _ := allHashes[key]
-	for k, v := range h {
-		out[k] = v
+	if !ok {
+		return NewHash()
 	}
 
-	return
-}
-
-func HToJSON(data interface{}) ([]byte, error) {
-	b, err := json.Marshal(data)
-	return b, err
+	return h.Copy()
 }
 
 // Returns all values in the hash stored at key.
 //
 // Return value
 // Slice reply: list of values in the hash, or an empty list when key does not exist.
-func Hvals(key string) (out []string) {
+func Hvals(key string) []string {
 	hashesMu.RLock()
-	defer hashesMu.RUnlock()
+	h, ok := allHashes[key]
+	hashesMu.RUnlock()
 
-	h, _ := allHashes[key]
-	for _, v := range h {
-		out = append(out, v)
+	if !ok {
+		return []string{}
 	}
 
-	return
+	return h.Values()
 }
 
 // Returns all field names in the hash stored at key.
 //
 // Return value
 // Array reply: list of fields in the hash, or an empty list when key does not exist.
-func Hkeys(key string) (out []string) {
+func Hkeys(key string) []string {
 	hashesMu.RLock()
-	defer hashesMu.RUnlock()
+	h, ok := allHashes[key]
+	hashesMu.RUnlock()
 
-	h, _ := allHashes[key]
-	for k, _ := range h {
-		out = append(out, k)
+	if !ok {
+		return []string{}
 	}
 
-	return
+	return h.Keys()
 }
