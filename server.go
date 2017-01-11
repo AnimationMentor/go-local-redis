@@ -51,27 +51,27 @@ func BgSave(fileName string, complete chan bool) string {
 			}
 			w.Write(b1)
 
-			listsMu.Lock()
+			listsMu.RLock()
 			b2, err := json.MarshalIndent(&allLists, "", "    ")
-			listsMu.Unlock()
+			listsMu.RUnlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b2)
 
-			setsMu.Lock()
+			setsMu.RLock()
 			b3, err := json.MarshalIndent(&allSets, "", "    ")
-			setsMu.Unlock()
+			setsMu.RUnlock()
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			w.Write(b3)
 
-			stringsMu.Lock()
+			stringsMu.RLock()
 			b4, err := json.MarshalIndent(&allStrings, "", "    ")
-			stringsMu.Unlock()
+			stringsMu.RUnlock()
 			if err != nil {
 				println(err.Error())
 				return

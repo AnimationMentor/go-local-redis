@@ -60,17 +60,17 @@ func Del(key ...string) (deletedCount int) {
 // 0 if the key does not exist.
 func Exists(key string) int {
 
-	hashesMu.Lock()
-	defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-	listsMu.Lock()
-	defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-	setsMu.Lock()
-	defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-	stringsMu.Lock()
-	defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
 	if _, exists := allHashes[key]; exists {
 		return 1
@@ -95,17 +95,17 @@ func Exists(key string) int {
 // Simple string reply: type of key, or none when key does not exist.
 func Type(key string) string {
 
-	hashesMu.Lock()
-	defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-	listsMu.Lock()
-	defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-	setsMu.Lock()
-	defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-	stringsMu.Lock()
-	defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
 	if _, exists := allHashes[key]; exists {
 		return "hash"
@@ -144,17 +144,17 @@ func Type(key string) string {
 // Array reply: list of keys matching pattern.
 func Keys(pattern string) (out []string) {
 
-	hashesMu.Lock()
-	defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-	listsMu.Lock()
-	defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-	setsMu.Lock()
-	defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-	stringsMu.Lock()
-	defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
 	r, _ := regexp.Compile(pattern)
 
