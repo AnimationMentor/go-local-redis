@@ -8,48 +8,48 @@ import "regexp"
 // Integer reply: The number of keys that were removed.
 func Del(key ...string) (deletedCount int) {
 
-    hashesMu.Lock()
-    defer hashesMu.Unlock()
+	hashesMu.Lock()
+	defer hashesMu.Unlock()
 
-    listsMu.Lock()
-    defer listsMu.Unlock()
+	listsMu.Lock()
+	defer listsMu.Unlock()
 
-    setsMu.Lock()
-    defer setsMu.Unlock()
+	setsMu.Lock()
+	defer setsMu.Unlock()
 
-    stringsMu.Lock()
-    defer stringsMu.Unlock()
+	stringsMu.Lock()
+	defer stringsMu.Unlock()
 
-    deletedCount = 0
+	deletedCount = 0
 
-    for _, k := range key {
-        if _, exists := allHashes[k]; exists {
-            delete(allHashes, k)
-            deletedCount++
-            publish <- notice{"hash", k, "", nil}
-            continue
-        }
-        if _, exists := allLists[k]; exists {
-            delete(allLists, k)
-            deletedCount++
-            publish <- notice{"list", k, "", nil}
-            continue
-        }
-        if _, exists := allSets[k]; exists {
-            delete(allSets, k)
-            deletedCount++
-            publish <- notice{"set", k, "", nil}
-            continue
-        }
-        if _, exists := allStrings[k]; exists {
-            delete(allStrings, k)
-            deletedCount++
-            publish <- notice{"string", k, "", nil}
-            continue
-        }
-    }
+	for _, k := range key {
+		if _, exists := allHashes[k]; exists {
+			delete(allHashes, k)
+			deletedCount++
+			publish <- notice{"hash", k, "", nil}
+			continue
+		}
+		if _, exists := allLists[k]; exists {
+			delete(allLists, k)
+			deletedCount++
+			publish <- notice{"list", k, "", nil}
+			continue
+		}
+		if _, exists := allSets[k]; exists {
+			delete(allSets, k)
+			deletedCount++
+			publish <- notice{"set", k, "", nil}
+			continue
+		}
+		if _, exists := allStrings[k]; exists {
+			delete(allStrings, k)
+			deletedCount++
+			publish <- notice{"string", k, "", nil}
+			continue
+		}
+	}
 
-    return
+	return
 }
 
 // Returns if key exists.
@@ -60,32 +60,32 @@ func Del(key ...string) (deletedCount int) {
 // 0 if the key does not exist.
 func Exists(key string) int {
 
-    hashesMu.Lock()
-    defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-    listsMu.Lock()
-    defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-    setsMu.Lock()
-    defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-    stringsMu.Lock()
-    defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
-    if _, exists := allHashes[key]; exists {
-        return 1
-    }
-    if _, exists := allLists[key]; exists {
-        return 1
-    }
-    if _, exists := allSets[key]; exists {
-        return 1
-    }
-    if _, exists := allStrings[key]; exists {
-        return 1
-    }
+	if _, exists := allHashes[key]; exists {
+		return 1
+	}
+	if _, exists := allLists[key]; exists {
+		return 1
+	}
+	if _, exists := allSets[key]; exists {
+		return 1
+	}
+	if _, exists := allStrings[key]; exists {
+		return 1
+	}
 
-    return 0
+	return 0
 }
 
 // Returns the string representation of the type of the value stored at key. The different
@@ -95,32 +95,32 @@ func Exists(key string) int {
 // Simple string reply: type of key, or none when key does not exist.
 func Type(key string) string {
 
-    hashesMu.Lock()
-    defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-    listsMu.Lock()
-    defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-    setsMu.Lock()
-    defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-    stringsMu.Lock()
-    defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
-    if _, exists := allHashes[key]; exists {
-        return "hash"
-    }
-    if _, exists := allLists[key]; exists {
-        return "list"
-    }
-    if _, exists := allSets[key]; exists {
-        return "set"
-    }
-    if _, exists := allStrings[key]; exists {
-        return "string"
-    }
+	if _, exists := allHashes[key]; exists {
+		return "hash"
+	}
+	if _, exists := allLists[key]; exists {
+		return "list"
+	}
+	if _, exists := allSets[key]; exists {
+		return "set"
+	}
+	if _, exists := allStrings[key]; exists {
+		return "string"
+	}
 
-    return ""
+	return ""
 }
 
 // Returns all keys matching pattern.
@@ -144,43 +144,43 @@ func Type(key string) string {
 // Array reply: list of keys matching pattern.
 func Keys(pattern string) (out []string) {
 
-    hashesMu.Lock()
-    defer hashesMu.Unlock()
+	hashesMu.RLock()
+	defer hashesMu.RUnlock()
 
-    listsMu.Lock()
-    defer listsMu.Unlock()
+	listsMu.RLock()
+	defer listsMu.RUnlock()
 
-    setsMu.Lock()
-    defer setsMu.Unlock()
+	setsMu.RLock()
+	defer setsMu.RUnlock()
 
-    stringsMu.Lock()
-    defer stringsMu.Unlock()
+	stringsMu.RLock()
+	defer stringsMu.RUnlock()
 
-    r, _ := regexp.Compile(pattern)
+	r, _ := regexp.Compile(pattern)
 
-    for k, _ := range allHashes {
-        if r.MatchString(k) == true {
-            out = append(out, k)
-        }
-    }
+	for k, _ := range allHashes {
+		if r.MatchString(k) == true {
+			out = append(out, k)
+		}
+	}
 
-    for k, _ := range allLists {
-        if r.MatchString(k) == true {
-            out = append(out, k)
-        }
-    }
+	for k, _ := range allLists {
+		if r.MatchString(k) == true {
+			out = append(out, k)
+		}
+	}
 
-    for k, _ := range allSets {
-        if r.MatchString(k) == true {
-            out = append(out, k)
-        }
-    }
+	for k, _ := range allSets {
+		if r.MatchString(k) == true {
+			out = append(out, k)
+		}
+	}
 
-    for k, _ := range allStrings {
-        if r.MatchString(k) == true {
-            out = append(out, k)
-        }
-    }
+	for k, _ := range allStrings {
+		if r.MatchString(k) == true {
+			out = append(out, k)
+		}
+	}
 
-    return
+	return
 }

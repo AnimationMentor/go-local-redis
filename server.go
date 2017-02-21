@@ -1,16 +1,17 @@
 package redis
 
 import (
-    "bufio"
-    "encoding/json"
-    "os"
-    "sync"
+	"bufio"
+	"encoding/json"
+	"os"
+	"sync"
+	"sync/atomic"
 )
 
 var (
-    lastPublishCount = 0
-    DefaultDumpFileName     = "../redisServer.dump.json"
-    fileWriteMu      sync.Mutex
+	lastPublishCount    uint64 = 0
+	DefaultDumpFileName        = "../redisServer.dump.json"
+	fileWriteMu         sync.Mutex
 )
 
 // Save the DB in background. The OK code is immediately returned. Redis forks, the parent
@@ -21,94 +22,106 @@ var (
 // Return value
 // Simple string reply
 func BgSave(fileName string, complete chan bool) string {
-    if publishCount > lastPublishCount {
-        lastPublishCount = publishCount
+	pubCount := atomic.LoadUint64(&publishCount)
+	if pubCount > atomic.LoadUint64(&lastPublishCount) {
+		atomic.StoreUint64(&lastPublishCount, pubCount)
 
-        go func() {
-            fileWriteMu.Lock()
-            defer fileWriteMu.Unlock()
+		go func() {
+			fileWriteMu.Lock()
+			defer fileWriteMu.Unlock()
 
-            fo, _ := os.Create(fileName)
-            defer fo.Close()
-            w := bufio.NewWriter(fo)
+			fo, _ := os.Create(fileName)
+			defer fo.Close()
+			w := bufio.NewWriter(fo)
 
-            // TODO: Lock around each key (checking existence) instead of around the whole
-            // hash so that other operations may sneak in.
+			// TODO: Lock around each key (checking existence) instead of around the whole
+			// hash so that other operations may sneak in.
 
-            hashesMu.Lock()
-            b1, err := json.MarshalIndent(&allHashes, "", "    ")
-            if err != nil {
-                println(err.Error())
-                return
-            }
-            w.Write(b1)
-            hashesMu.Unlock()
+			allMaps := make(map[string]map[string]string)
 
-            listsMu.Lock()
-            b2, err := json.MarshalIndent(&allLists, "", "    ")
-            if err != nil {
-                println(err.Error())
-                return
-            }
-            w.Write(b2)
-            listsMu.Unlock()
+			hashesMu.RLock()
+			for key, hash := range allHashes {
+				allMaps[key] = hash.ToMap()
+			}
+			hashesMu.RUnlock()
+			b1, err := json.MarshalIndent(&allMaps, "", "    ")
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			w.Write(b1)
 
-            setsMu.Lock()
-            b3, err := json.MarshalIndent(&allSets, "", "    ")
-            if err != nil {
-                println(err.Error())
-                return
-            }
-            w.Write(b3)
-            setsMu.Unlock()
+			listsMu.RLock()
+			b2, err := json.MarshalIndent(&allLists, "", "    ")
+			listsMu.RUnlock()
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			w.Write(b2)
 
-            stringsMu.Lock()
-            b4, err := json.MarshalIndent(&allStrings, "", "    ")
-            if err != nil {
-                println(err.Error())
-                return
-            }
-            w.Write(b4)
-            stringsMu.Unlock()
+			setsMu.RLock()
+			b3, err := json.MarshalIndent(&allSets, "", "    ")
+			setsMu.RUnlock()
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			w.Write(b3)
 
-            w.Flush()
+			stringsMu.RLock()
+			b4, err := json.MarshalIndent(&allStrings, "", "    ")
+			stringsMu.RUnlock()
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			w.Write(b4)
 
-            if complete != nil {
-                complete <- true
-            }
-        }()
-    }
+			w.Flush()
 
-    return "OK"
+			if complete != nil {
+				complete <- true
+			}
+		}()
+	}
+
+	return "OK"
 }
 
 //// Load any backup before doing anything else.
 //
 func InitDB(fileName string) {
-    if fileName != "" {
-        fileWriteMu.Lock()
-        defer fileWriteMu.Unlock()
+	if fileName != "" {
+		fileWriteMu.Lock()
+		defer fileWriteMu.Unlock()
 
-        fo, _ := os.Open(fileName)
-        defer fo.Close()
+		fo, _ := os.Open(fileName)
+		defer fo.Close()
 
-        r := bufio.NewReader(fo)
-        dec := json.NewDecoder(r)
+		r := bufio.NewReader(fo)
+		dec := json.NewDecoder(r)
 
-        hashesMu.Lock()
-        dec.Decode(&allHashes)
-        hashesMu.Unlock()
+		allMaps := make(map[string]map[string]string)
+		dec.Decode(&allMaps)
+		hashesMu.Lock()
+		for key, aMap := range allMaps {
+			hash := NewHash()
+			hash.m = aMap
+			allHashes[key] = hash
+		}
+		hashesMu.Unlock()
 
-        listsMu.Lock()
-        dec.Decode(&allLists)
-        listsMu.Unlock()
+		listsMu.Lock()
+		dec.Decode(&allLists)
+		listsMu.Unlock()
 
-        setsMu.Lock()
-        dec.Decode(&allSets)
-        setsMu.Unlock()
+		setsMu.Lock()
+		dec.Decode(&allSets)
+		setsMu.Unlock()
 
-        stringsMu.Lock()
-        dec.Decode(&allStrings)
-        stringsMu.Unlock()
-    }
+		stringsMu.Lock()
+		dec.Decode(&allStrings)
+		stringsMu.Unlock()
+	}
 }
