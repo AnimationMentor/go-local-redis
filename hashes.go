@@ -21,6 +21,11 @@ func NewHash() Hash {
 	}
 }
 
+// Valid returns true if the Hash is a valid non-nil instance
+func (h Hash) Valid() bool {
+	return h.m != nil && h.mu != nil
+}
+
 // Size returns the number of items in the hash
 func (h Hash) Size() int {
 	h.mu.RLock()
@@ -181,6 +186,9 @@ func HDel(key, field string) (existed int) {
 			h.Delete(field)
 			existed++
 		}
+	} else {
+		// Publish a valid empty Hash
+		h = NewHash()
 	}
 
 	hashesMu.Unlock()
