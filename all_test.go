@@ -171,6 +171,29 @@ func TestPubSubMultiple(t *testing.T) {
 	w.Wait()
 }
 
+func TestPubSubValidHash(t *testing.T) {
+	key := "TestPubSubValidHash:"
+	sub := Psubscribe(fmt.Sprintf("%s.*", key))
+
+	go func() {
+		t.Log("HSet")
+		HSet(fmt.Sprintf("%s set", key), "field", "value")
+
+		t.Log("HDel")
+		HDel(fmt.Sprintf("%s del", key), "field")
+	}()
+
+	for i := 0; i < 2; i++ {
+		notice := <-sub.Channel
+		hash := notice.Data.(Hash)
+		if !hash.Valid() {
+			t.Errorf("Received an invalid Hash in subscription message: %+v", notice)
+			continue
+		}
+		t.Logf("Received: %+v", notice)
+	}
+}
+
 func TestPubSubRedisSetUpdates(t *testing.T) {
 	var w sync.WaitGroup
 	w.Add(1)
